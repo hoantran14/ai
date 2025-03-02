@@ -1,0 +1,63 @@
+#bai11
+import numpy as np
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
+
+
+pm25 = ctrl.Antecedent(np.arange(0, 301, 1), 'pm25')
+co2 = ctrl.Antecedent(np.arange(300, 2001, 1), 'co2')
+humidity = ctrl.Antecedent(np.arange(0, 101, 1), 'humidity')
+
+
+air_purification = ctrl.Consequent(np.arange(0, 101, 1), 'air_purification')
+
+
+pm25['low'] = fuzz.gaussmf(pm25.universe, 50, 20)
+pm25['medium'] = fuzz.gaussmf(pm25.universe, 150, 30)
+pm25['high'] = fuzz.gaussmf(pm25.universe, 250, 30)
+
+co2['low'] = fuzz.gaussmf(co2.universe, 600, 100)
+co2['medium'] = fuzz.gaussmf(co2.universe, 1200, 200)
+co2['high'] = fuzz.gaussmf(co2.universe, 1800, 200)
+
+humidity['low'] = fuzz.gaussmf(humidity.universe, 20, 10)
+humidity['medium'] = fuzz.gaussmf(humidity.universe, 50, 10)
+humidity['high'] = fuzz.gaussmf(humidity.universe, 80, 10)
+
+air_purification['low'] = fuzz.gaussmf(air_purification.universe, 20, 10)
+air_purification['medium'] = fuzz.gaussmf(air_purification.universe, 50, 10)
+air_purification['high'] = fuzz.gaussmf(air_purification.universe, 80, 10)
+
+
+rule1 = ctrl.Rule(pm25['high'], air_purification['high'])
+rule2 = ctrl.Rule(pm25['medium'], air_purification['medium'])
+rule3 = ctrl.Rule(pm25['low'], air_purification['low'])
+
+rule4 = ctrl.Rule(co2['high'], air_purification['high'])
+rule5 = ctrl.Rule(co2['medium'], air_purification['medium'])
+rule6 = ctrl.Rule(co2['low'], air_purification['low'])
+
+rule7 = ctrl.Rule(humidity['high'], air_purification['low'])
+rule8 = ctrl.Rule(humidity['medium'], air_purification['medium'])
+rule9 = ctrl.Rule(humidity['low'], air_purification['high'])
+
+rule10 = ctrl.Rule(pm25['high'] & co2['high'] & humidity['low'], air_purification['high'])
+rule11 = ctrl.Rule(pm25['medium'] & co2['medium'] & humidity['medium'], air_purification['medium'])
+rule12 = ctrl.Rule(pm25['low'] & co2['low'] & humidity['high'], air_purification['low'])
+
+air_quality_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, rule11, rule12])
+air_quality_system = ctrl.ControlSystemSimulation(air_quality_ctrl)
+
+
+air_quality_system.input['pm25'] = 220
+air_quality_system.input['co2'] = 1700
+air_quality_system.input['humidity'] = 30
+
+
+air_quality_system.compute()
+
+
+print(f"Mức lọc không khí dự đoán: {air_quality_system.output['air_purification']:.2f}%")
+
+
+air_purification.view(sim=air_quality_system)
