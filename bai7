@@ -1,0 +1,78 @@
+#bai7
+import numpy as np
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
+
+food_type = ctrl.Antecedent(np.arange(0, 11, 1), 'food_type')
+food_weight = ctrl.Antecedent(np.arange(0, 1010, 10), 'food_weight')
+initial_temperature = ctrl.Antecedent(np.arange(0, 61, 1), 'initial_temperature')
+water_content = ctrl.Antecedent(np.arange(0, 11, 1), 'water_content')
+
+
+cooking_time = ctrl.Consequent(np.arange(0, 21, 1), 'cooking_time')
+heat_level = ctrl.Consequent(np.arange(0, 101, 1), 'heat_level')
+
+food_type['soft'] = fuzz.gaussmf(food_type.universe, 1, 1.5)
+food_type['medium'] = fuzz.gaussmf(food_type.universe, 5, 1.5)
+food_type['hard'] = fuzz.gaussmf(food_type.universe, 9, 1.5)
+
+food_weight['light'] = fuzz.gaussmf(food_weight.universe, 200, 100)
+food_weight['medium'] = fuzz.gaussmf(food_weight.universe, 500, 150)
+food_weight['heavy'] = fuzz.gaussmf(food_weight.universe, 800, 150)
+
+initial_temperature['cold'] = fuzz.gaussmf(initial_temperature.universe, 10, 5)
+initial_temperature['warm'] = fuzz.gaussmf(initial_temperature.universe, 30, 5)
+initial_temperature['hot'] = fuzz.gaussmf(initial_temperature.universe, 50, 5)
+
+water_content['low'] = fuzz.gaussmf(water_content.universe, 2, 1.5)
+water_content['medium'] = fuzz.gaussmf(water_content.universe, 5, 1.5)
+water_content['high'] = fuzz.gaussmf(water_content.universe, 8, 1.5)
+
+cooking_time['short'] = fuzz.gaussmf(cooking_time.universe, 5, 2)
+cooking_time['medium'] = fuzz.gaussmf(cooking_time.universe, 12, 2)
+cooking_time['long'] = fuzz.gaussmf(cooking_time.universe, 18, 2)
+
+heat_level['low'] = fuzz.gaussmf(heat_level.universe, 30, 10)
+heat_level['medium'] = fuzz.gaussmf(heat_level.universe, 60, 10)
+heat_level['high'] = fuzz.gaussmf(heat_level.universe, 90, 10)
+
+
+rule1 = ctrl.Rule(food_type['soft'], heat_level['low'])
+rule2 = ctrl.Rule(food_type['medium'], heat_level['medium'])
+rule3 = ctrl.Rule(food_type['hard'], heat_level['high'])
+
+rule4 = ctrl.Rule(food_weight['light'], cooking_time['short'])
+rule5 = ctrl.Rule(food_weight['medium'], cooking_time['medium'])
+rule6 = ctrl.Rule(food_weight['heavy'], cooking_time['long'])
+
+rule7 = ctrl.Rule(initial_temperature['cold'], cooking_time['long'])
+rule8 = ctrl.Rule(initial_temperature['warm'], cooking_time['medium'])
+rule9 = ctrl.Rule(initial_temperature['hot'], cooking_time['short'])
+
+rule10 = ctrl.Rule(water_content['low'], heat_level['high'])
+rule11 = ctrl.Rule(water_content['medium'], heat_level['medium'])
+rule12 = ctrl.Rule(water_content['high'], heat_level['low'])
+
+rule13 = ctrl.Rule(food_type['hard'] & food_weight['heavy'] & initial_temperature['cold'] & water_content['low'],
+                   [cooking_time['long'], heat_level['high']])
+rule14 = ctrl.Rule(food_type['soft'] & food_weight['medium'] & initial_temperature['warm'] & water_content['medium'],
+                   [cooking_time['medium'], heat_level['medium']])
+rule15 = ctrl.Rule(food_type['medium'] & food_weight['light'] & initial_temperature['hot'] & water_content['high'],
+                   [cooking_time['short'], heat_level['low']])
+
+
+pot_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, rule11, rule12, rule13, rule14, rule15])
+pot_system = ctrl.ControlSystemSimulation(pot_ctrl)
+
+pot_system.input['food_type'] = 9
+pot_system.input['food_weight'] = 800
+pot_system.input['initial_temperature'] = 5
+pot_system.input['water_content'] = 2
+
+pot_system.compute()
+
+print(f"Thời gian nấu dự đoán: {pot_system.output['cooking_time']:.2f} phút")
+print(f"Mức nhiệt dự đoán: {pot_system.output['heat_level']:.2f}%")
+
+cooking_time.view(sim=pot_system)
+heat_level.view(sim=pot_system)
