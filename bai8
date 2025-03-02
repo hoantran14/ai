@@ -1,0 +1,74 @@
+#bai8
+import numpy as np
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
+
+
+heart_rate = ctrl.Antecedent(np.arange(40, 181, 1), 'heart_rate')
+blood_pressure = ctrl.Antecedent(np.arange(60, 181, 1), 'blood_pressure')
+body_temperature = ctrl.Antecedent(np.arange(34, 41, 0.1), 'body_temperature')
+oxygen_level = ctrl.Antecedent(np.arange(70, 101, 1), 'oxygen_level')
+
+
+risk_level = ctrl.Consequent(np.arange(0, 101, 1), 'risk_level')
+
+
+heart_rate['low'] = fuzz.gaussmf(heart_rate.universe, 50, 10)
+heart_rate['normal'] = fuzz.gaussmf(heart_rate.universe, 80, 10)
+heart_rate['high'] = fuzz.gaussmf(heart_rate.universe, 120, 10)
+
+blood_pressure['low'] = fuzz.gaussmf(blood_pressure.universe, 70, 10)
+blood_pressure['normal'] = fuzz.gaussmf(blood_pressure.universe, 120, 10)
+blood_pressure['high'] = fuzz.gaussmf(blood_pressure.universe, 160, 10)
+
+body_temperature['low'] = fuzz.gaussmf(body_temperature.universe, 35, 0.5)
+body_temperature['normal'] = fuzz.gaussmf(body_temperature.universe, 37, 0.5)
+body_temperature['high'] = fuzz.gaussmf(body_temperature.universe, 39, 0.5)
+
+oxygen_level['dangerous'] = fuzz.gaussmf(oxygen_level.universe, 75, 5)
+oxygen_level['medium'] = fuzz.gaussmf(oxygen_level.universe, 85, 5)
+oxygen_level['good'] = fuzz.gaussmf(oxygen_level.universe, 95, 5)
+
+risk_level['low'] = fuzz.gaussmf(risk_level.universe, 20, 10)
+risk_level['medium'] = fuzz.gaussmf(risk_level.universe, 50, 10)
+risk_level['high'] = fuzz.gaussmf(risk_level.universe, 80, 10)
+
+
+rule1 = ctrl.Rule(heart_rate['low'] | heart_rate['high'], risk_level['high'])
+rule2 = ctrl.Rule(heart_rate['normal'], risk_level['low'])
+
+rule3 = ctrl.Rule(blood_pressure['low'] | blood_pressure['high'], risk_level['high'])
+rule4 = ctrl.Rule(blood_pressure['normal'], risk_level['low'])
+
+rule5 = ctrl.Rule(body_temperature['low'] | body_temperature['high'], risk_level['medium'])
+rule6 = ctrl.Rule(body_temperature['normal'], risk_level['low'])
+
+rule7 = ctrl.Rule(oxygen_level['dangerous'], risk_level['high'])
+rule8 = ctrl.Rule(oxygen_level['medium'], risk_level['medium'])
+rule9 = ctrl.Rule(oxygen_level['good'], risk_level['low'])
+
+rule10 = ctrl.Rule(heart_rate['high'] & blood_pressure['high'] & oxygen_level['dangerous'], risk_level['high'])
+rule11 = ctrl.Rule(heart_rate['normal'] & blood_pressure['normal'] & oxygen_level['good'], risk_level['low'])
+rule12 = ctrl.Rule(body_temperature['high'] & blood_pressure['low'] & oxygen_level['medium'], risk_level['medium'])
+
+
+patient_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, rule11, rule12])
+patient_system = ctrl.ControlSystemSimulation(patient_ctrl)
+
+
+patient_system.input['heart_rate'] = 130
+patient_system.input['blood_pressure'] = 150
+patient_system.input['body_temperature'] = 38.5
+patient_system.input['oxygen_level'] = 80
+
+
+patient_system.compute()
+
+
+print(f"Mức độ nguy hiểm dự đoán: {patient_system.output['risk_level']:.2f}%")
+
+
+risk_level.view(sim=patient_system)
+
+
+
