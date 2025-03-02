@@ -1,0 +1,54 @@
+import numpy as np
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
+
+sugar = ctrl.Antecedent(np.arange(60, 220, 1), 'sugar')
+bmi = ctrl.Antecedent(np.arange(16, 35 , 1), 'bmi')
+urination = ctrl.Antecedent(np.arange( 3, 16, 1), 'urination')
+fatigue = ctrl.Consequent(np.arange(0, 11, 1), 'fatigue')
+risk = ctrl.Consequent(np.arange(0, 11, 1), 'risk')
+
+sugar['low'] = fuzz.gaussmf(sugar.universe, 0,8)
+sugar['normal'] = fuzz.gaussmf(sugar.universe, 60,10)
+sugar['high'] = fuzz.gaussmf(sugar.universe, 85,16)
+sugar['very high'] = fuzz.gaussmf(sugar.universe, 120,20)
+
+bmi['underweight'] = fuzz.gaussmf(bmi.universe, 17, 4)
+bmi['normal'] = fuzz.gaussmf(bmi.universe, 20, 4)
+bmi['overweight'] = fuzz.gaussmf(bmi.universe, 25, 4)
+
+urination['rarely'] = fuzz.gaussmf(urination.universe, 0, 6)
+urination['sometimes'] = fuzz.gaussmf(urination.universe, 7, 6)
+urination['often'] = fuzz.gaussmf(urination.universe, 10, 6 )
+
+fatigue['low'] = fuzz.gaussmf(fatigue.universe, 0, 6)
+fatigue['moderate'] = fuzz.gaussmf(fatigue.universe, 5, 6)
+fatigue['high'] = fuzz.gaussmf(fatigue.universe, 8, 6)
+
+risk['low'] = fuzz.trapmf(risk.universe, [0, 0, 2, 5])
+risk['medium'] = fuzz.trapmf(risk.universe, [0, 2, 5, 7])
+risk['high'] = fuzz.trapmf(risk.universe, [3, 5, 7, 8])
+risk['very_high'] = fuzz.trapmf(risk.universe, [7, 8, 10, 11 ])
+
+
+rule1 = ctrl.Rule(sugar['high'] & urination['often'], risk['very_high'])
+rule2 = ctrl.Rule(sugar['high'] & urination['sometimes'], risk['high'])
+rule3 = ctrl.Rule(sugar['normal'] & urination['rarely'], risk['low'])
+rule4 = ctrl.Rule(sugar['high'] & bmi['overweight'], risk['high'])
+rule5 = ctrl.Rule(sugar['high'] & fatigue['high'], risk['very_high'])
+rule6 = ctrl.Rule(sugar['normal'] & bmi['normal'], risk['low'])
+rule7 = ctrl.Rule(sugar['high'] & bmi['overweight'], risk['medium'])
+rule8 = ctrl.Rule(sugar['high'] & fatigue['moderate'], risk['medium'])
+rule9 = ctrl.Rule(sugar['low'] & bmi['underweight'], risk['low'])
+
+
+sugar.view()
+bmi.view()
+urination.view()
+fatigue.view()
+risk.view()
+
+
+
+
+
