@@ -1,0 +1,61 @@
+#bai9
+import numpy as np
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
+
+import numpy as np
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
+
+main_road_density = ctrl.Antecedent(np.arange(0, 101, 1), 'main_road_density')
+side_road_density = ctrl.Antecedent(np.arange(0, 101, 1), 'side_road_density')
+waiting_time = ctrl.Antecedent(np.arange(0, 301, 1), 'waiting_time')
+
+
+green_light_time = ctrl.Consequent(np.arange(0, 121, 1), 'green_light_time')
+
+main_road_density['low'] = fuzz.gaussmf(main_road_density.universe, 20, 10)
+main_road_density['medium'] = fuzz.gaussmf(main_road_density.universe, 50, 10)
+main_road_density['high'] = fuzz.gaussmf(main_road_density.universe, 80, 10)
+
+side_road_density['low'] = fuzz.gaussmf(side_road_density.universe, 20, 10)
+side_road_density['medium'] = fuzz.gaussmf(side_road_density.universe, 50, 10)
+side_road_density['high'] = fuzz.gaussmf(side_road_density.universe, 80, 10)
+
+waiting_time['short'] = fuzz.gaussmf(waiting_time.universe, 60, 20)
+waiting_time['medium'] = fuzz.gaussmf(waiting_time.universe, 150, 30)
+waiting_time['long'] = fuzz.gaussmf(waiting_time.universe, 240, 30)
+
+green_light_time['short'] = fuzz.gaussmf(green_light_time.universe, 30, 10)
+green_light_time['medium'] = fuzz.gaussmf(green_light_time.universe, 60, 10)
+green_light_time['long'] = fuzz.gaussmf(green_light_time.universe, 90, 10)
+
+rule1 = ctrl.Rule(main_road_density['high'], green_light_time['long'])
+rule2 = ctrl.Rule(main_road_density['medium'], green_light_time['medium'])
+rule3 = ctrl.Rule(main_road_density['low'], green_light_time['short'])
+
+rule4 = ctrl.Rule(side_road_density['high'], green_light_time['short'])
+rule5 = ctrl.Rule(side_road_density['medium'], green_light_time['medium'])
+rule6 = ctrl.Rule(side_road_density['low'], green_light_time['long'])
+
+rule7 = ctrl.Rule(waiting_time['long'], green_light_time['long'])
+rule8 = ctrl.Rule(waiting_time['medium'], green_light_time['medium'])
+rule9 = ctrl.Rule(waiting_time['short'], green_light_time['short'])
+
+rule10 = ctrl.Rule(main_road_density['high'] & side_road_density['low'] & waiting_time['long'], green_light_time['long'])
+rule11 = ctrl.Rule(main_road_density['medium'] & side_road_density['medium'] & waiting_time['medium'], green_light_time['medium'])
+rule12 = ctrl.Rule(main_road_density['low'] & side_road_density['high'] & waiting_time['short'], green_light_time['short'])
+
+traffic_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, rule11, rule12])
+traffic_system = ctrl.ControlSystemSimulation(traffic_ctrl)
+
+traffic_system.input['main_road_density'] = 75
+traffic_system.input['side_road_density'] = 30
+traffic_system.input['waiting_time'] = 200
+
+traffic_system.compute()
+
+print(f"Thời gian đèn xanh dự đoán: {traffic_system.output['green_light_time']:.2f} giây")
+
+green_light_time.view(sim=traffic_system)
+
