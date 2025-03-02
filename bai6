@@ -1,0 +1,64 @@
+import numpy as np
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
+
+temperature = ctrl.Antecedent(np.arange(16, 36, 1), 'temperature')
+humidity = ctrl.Antecedent(np.arange(0, 101, 1), 'humidity')
+people = ctrl.Antecedent(np.arange(0, 11, 1), 'people')
+
+
+fan_speed = ctrl.Consequent(np.arange(0, 101, 1), 'fan_speed')
+cooling_level = ctrl.Consequent(np.arange(0, 101, 1), 'cooling_level')
+
+
+temperature.automf(names=['cold', 'cool', 'comfortable', 'warm', 'hot'])
+humidity.automf(names=['low', 'medium', 'high'])
+people.automf(names=['few', 'moderate', 'many'])
+
+fan_speed.automf(names=['low', 'medium', 'high'])
+cooling_level.automf(names=['low', 'medium', 'high'])
+
+
+temperature.view()
+humidity.view()
+people.view()
+fan_speed.view()
+cooling_level.view()
+
+
+rule1 = ctrl.Rule(temperature['cold'], [fan_speed['low'], cooling_level['low']])
+rule2 = ctrl.Rule(temperature['cool'], [fan_speed['low'], cooling_level['low']])
+rule3 = ctrl.Rule(temperature['comfortable'], [fan_speed['medium'], cooling_level['medium']])
+rule4 = ctrl.Rule(temperature['warm'], [fan_speed['high'], cooling_level['high']])
+rule5 = ctrl.Rule(temperature['hot'], [fan_speed['high'], cooling_level['high']])
+
+rule6 = ctrl.Rule(humidity['low'], cooling_level['low'])
+rule7 = ctrl.Rule(humidity['medium'], cooling_level['medium'])
+rule8 = ctrl.Rule(humidity['high'], cooling_level['high'])
+
+rule9 = ctrl.Rule(people['few'], fan_speed['low'])
+rule10 = ctrl.Rule(people['moderate'], fan_speed['medium'])
+rule11 = ctrl.Rule(people['many'], fan_speed['high'])
+
+rule12 = ctrl.Rule(temperature['hot'] & humidity['high'] & people['many'], [fan_speed['high'], cooling_level['high']])
+rule13 = ctrl.Rule(temperature['comfortable'] & humidity['medium'] & people['moderate'], [fan_speed['medium'], cooling_level['medium']])
+rule14 = ctrl.Rule(temperature['cool'] & humidity['low'] & people['few'], [fan_speed['low'], cooling_level['low']])
+
+
+ac_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, rule11, rule12, rule13, rule14])
+ac_system = ctrl.ControlSystemSimulation(ac_ctrl)
+
+ac_system.input['temperature'] = 30
+ac_system.input['humidity'] = 75
+ac_system.input['people'] = 6
+
+
+ac_system.compute()
+
+
+print(f"Tốc độ quạt dự đoán: {ac_system.output['fan_speed']:.2f}%")
+print(f"Mức độ làm mát dự đoán: {ac_system.output['cooling_level']:.2f}%")
+
+
+fan_speed.view(sim=ac_system)
+cooling_level.view(sim=ac_system)
