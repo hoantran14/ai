@@ -1,0 +1,66 @@
+#bai10
+import numpy as np
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
+
+import numpy as np
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
+
+
+noise_level = ctrl.Antecedent(np.arange(30, 101, 1), 'noise_level')
+crowd_density = ctrl.Antecedent(np.arange(0, 11, 1), 'crowd_density')
+time_of_day = ctrl.Antecedent(np.arange(0, 24, 1), 'time_of_day')
+
+
+noise_reduction = ctrl.Consequent(np.arange(0, 101, 1), 'noise_reduction')
+
+
+noise_level['low'] = fuzz.gaussmf(noise_level.universe, 40, 10)
+noise_level['medium'] = fuzz.gaussmf(noise_level.universe, 65, 10)
+noise_level['high'] = fuzz.gaussmf(noise_level.universe, 90, 10)
+
+crowd_density['low'] = fuzz.gaussmf(crowd_density.universe, 2, 1.5)
+crowd_density['medium'] = fuzz.gaussmf(crowd_density.universe, 5, 1.5)
+crowd_density['high'] = fuzz.gaussmf(crowd_density.universe, 8, 1.5)
+
+time_of_day['morning'] = fuzz.gaussmf(time_of_day.universe, 8, 2)
+time_of_day['afternoon'] = fuzz.gaussmf(time_of_day.universe, 14, 2)
+time_of_day['night'] = fuzz.gaussmf(time_of_day.universe, 22, 2)
+
+noise_reduction['low'] = fuzz.gaussmf(noise_reduction.universe, 20, 10)
+noise_reduction['medium'] = fuzz.gaussmf(noise_reduction.universe, 50, 10)
+noise_reduction['high'] = fuzz.gaussmf(noise_reduction.universe, 80, 10)
+
+
+rule1 = ctrl.Rule(noise_level['high'], noise_reduction['high'])
+rule2 = ctrl.Rule(noise_level['medium'], noise_reduction['medium'])
+rule3 = ctrl.Rule(noise_level['low'], noise_reduction['low'])
+
+rule4 = ctrl.Rule(crowd_density['high'], noise_reduction['high'])
+rule5 = ctrl.Rule(crowd_density['medium'], noise_reduction['medium'])
+rule6 = ctrl.Rule(crowd_density['low'], noise_reduction['low'])
+
+rule7 = ctrl.Rule(time_of_day['night'], noise_reduction['high'])
+rule8 = ctrl.Rule(time_of_day['afternoon'], noise_reduction['medium'])
+rule9 = ctrl.Rule(time_of_day['morning'], noise_reduction['low'])
+
+rule10 = ctrl.Rule(noise_level['high'] & crowd_density['high'] & time_of_day['night'], noise_reduction['high'])
+rule11 = ctrl.Rule(noise_level['medium'] & crowd_density['medium'] & time_of_day['afternoon'], noise_reduction['medium'])
+rule12 = ctrl.Rule(noise_level['low'] & crowd_density['low'] & time_of_day['morning'], noise_reduction['low'])
+
+
+noise_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, rule11, rule12])
+noise_system = ctrl.ControlSystemSimulation(noise_ctrl)
+
+
+noise_system.input['noise_level'] = 85
+noise_system.input['crowd_density'] = 8
+noise_system.input['time_of_day'] = 22
+
+
+noise_system.compute()
+
+print(f"Mức giảm tiếng ồn dự đoán: {noise_system.output['noise_reduction']:.2f}%")
+
+noise_reduction.view(sim=noise_system)
